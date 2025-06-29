@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "583849313089",
+    "project_id": "hamora-a2153",
+    "storage_bucket": "hamora-a2153.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:583849313089:android:9955a0cce2f6425e2797c0",
+        "android_client_info": {
+          "package_name": "com.example.hamora"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMEg8cXjmmVOkrMi4No7jUWQLGt_BdSEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
