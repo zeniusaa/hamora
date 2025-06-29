@@ -5,27 +5,26 @@ class MoviePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: <Widget>[
-        // Note: Header
-        _buildHeader(context),
+        _buildUserHeader(context),
+        _buildSectionTitle("Recommended Films"),
+        _buildRecommendedMovies(),
 
-        // Note: Now Playing
-        _buildSectionTitle("Now Playing"),
-        _buildNowPlaying(),
+        _buildSectionTitle("Browse by Genre"),
+        _buildGenreList(context),
 
-        // Note: Browse Movie
-        _buildSectionTitle("Browse Movie"),
-        _buildBrowseMovie(context),
-
-        // Note: Coming Soon
         _buildSectionTitle("Coming Soon"),
-        _buildComingSoon(),
+        _buildComingSoonMovies(),
+
+        _buildSectionTitle("All Movies"),
+        _buildAllMoviesList(),
 
         SizedBox(height: 100),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  // ---------------- Header ----------------
+  Widget _buildUserHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: accentColor1,
@@ -35,44 +34,35 @@ class MoviePage extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.fromLTRB(defaultMargin, 20, defaultMargin, 30),
-      child: BlocBuilder<UserBloc, UserState>(builder: (_, userState) {
-        if (userState is UserLoaded) {
-          return Row(
-            children: <Widget>[
-              _buildUserInfo(userState.user, context),
-            ],
-          );
-        } else {
-          return SpinKitFadingCircle(
-            color: accentColor2,
-            size: 50,
-          );
-        }
-      }),
+      child: BlocBuilder<UserBloc, UserState>(
+        builder: (_, userState) {
+          if (userState is UserLoaded) {
+            return Center(
+              child: GestureDetector(
+                onTap: () {
+                  context.read<PageBloc>().add(GoToProfilePage());
+                },
+                child: Text(
+                  userState.user.name ?? 'No Name',
+                  style: whiteTextFont.copyWith(fontSize: 28),
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          } else {
+            return SpinKitFadingCircle(
+              color: accentColor2,
+              size: 50,
+            );
+          }
+        },
+      ),
     );
   }
 
-  Widget _buildUserInfo(User user, BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        SizedBox(
-          width: MediaQuery.of(context).size.width - 2 * defaultMargin,
-          child: GestureDetector(
-            onTap: () {
-            context.read<PageBloc>().add(GoToProfilePage());
-            },
-            child: Text(            
-            user.name ?? 'No Name',
-            style: whiteTextFont.copyWith(fontSize: 18),
-            maxLines: 1,
-            overflow: TextOverflow.clip,
-            )
-          ),
-        ),
-      ],
-    );
-  }
+  // ---------------- Section Title ----------------
   Widget _buildSectionTitle(String title) {
     return Container(
       margin: EdgeInsets.fromLTRB(defaultMargin, 30, defaultMargin, 12),
@@ -86,14 +76,14 @@ class MoviePage extends StatelessWidget {
     );
   }
 
-  Widget _buildNowPlaying() {
+  // ---------------- Recommended (Now Playing) ----------------
+  Widget _buildRecommendedMovies() {
     return SizedBox(
       height: 140,
       child: BlocBuilder<MovieBloc, MovieState>(
         builder: (_, movieState) {
           if (movieState is MovieLoaded) {
             List<Movie> movies = movieState.movies.sublist(0, 10);
-
             return ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: movies.length,
@@ -120,29 +110,42 @@ class MoviePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBrowseMovie(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          BrowseButton("Action", "28"),
-          BrowseButton("War", "10752"),
-          BrowseButton("Music", "10402"),
-          BrowseButton("Crime", "80"),
-        ],
+  // ---------------- Genre Horizontal List ----------------
+  Widget _buildGenreList(BuildContext context) {
+    final genres = [
+      {"name": "Action", "id": "28"},
+      {"name": "Crime", "id": "80"},
+      {"name": "Drama", "id": "18"},
+      {"name": "Horror", "id": "27"},
+      {"name": "Music", "id": "10402"},
+      {"name": "War", "id": "10752"},
+    ];
+
+    return Container(
+      height: 130,
+      margin: EdgeInsets.symmetric(horizontal: defaultMargin),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: genres.length,
+        itemBuilder: (context, index) {
+          final genre = genres[index];
+          return Container(
+            margin: EdgeInsets.only(right: 12),
+            child: BrowseButton(genre["name"]!, genre["id"]!),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildComingSoon() {
+  // ---------------- Coming Soon ----------------
+  Widget _buildComingSoonMovies() {
     return SizedBox(
       height: 160,
       child: BlocBuilder<MovieBloc, MovieState>(
         builder: (_, movieState) {
           if (movieState is MovieLoaded) {
             List<Movie> movies = movieState.movies.sublist(10);
-
             return ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: movies.length,
@@ -153,7 +156,9 @@ class MoviePage extends StatelessWidget {
                 ),
                 child: ComingSoonCard(
                   movies[index],
-                  onTap: () {},
+                  onTap: (BuildContext context) {
+                    context.read<PageBloc>().add(GoToMovieDetailPage(movies[index]));
+                  },
                 ),
               ),
             );
@@ -165,4 +170,32 @@ class MoviePage extends StatelessWidget {
     );
   }
 
+  // ---------------- All Movies ----------------
+  Widget _buildAllMoviesList() {
+    return BlocBuilder<MovieBloc, MovieState>(
+      builder: (_, movieState) {
+        if (movieState is MovieLoaded) {
+          List<Movie> movies = movieState.movies;
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: movies.length,
+            itemBuilder: (_, index) => Container(
+              margin: EdgeInsets.fromLTRB(defaultMargin, 8, defaultMargin, 8),
+              child: MovieList(
+                movies[index],
+                onTap: (BuildContext context) {
+                  context
+                      .read<PageBloc>()
+                      .add(GoToMovieDetailPage(movies[index]));
+                },
+              ),
+            ),
+          );
+        } else {
+          return SpinKitFadingCircle(color: mainColor, size: 50);
+        }
+      },
+    );
+  }
 }

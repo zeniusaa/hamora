@@ -33,23 +33,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               margin: EdgeInsets.only(top: 74, bottom: 10),
                               width: 120,
                               height: 120,
-                              child: Stack(
-                                children: <Widget>[
-                                  Center(
-                                    child: SizedBox(
-                                      width: 50,
-                                      height: 50,
-                                      child: SpinKitFadingCircle(
-                                        color: mainColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 120,
-                                    height: 120,
-                                  ),
-                                ],
-                              ),
                             ),
                             SizedBox(
                               width: MediaQuery.of(context).size.width -
@@ -82,36 +65,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      BlocBuilder<UserBloc, UserState>(
-                        builder: (_, userState) => GestureDetector(
-                          onTap: () {
-                            context.read<PageBloc>().add(GoToEditProfilePage(
-                                (userState as UserLoaded).user));
-                          },
-                          child: Row(
-                            children: <Widget>[
-                              SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child:
-                                      Image.asset("assets/edit_profile.png")),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                "Edit Profile",
-                                style: blackTextFont.copyWith(fontSize: 16),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.only(top: 10, bottom: 16),
-                        child: generateDashedDivider(
-                            MediaQuery.of(context).size.width -
-                                2 * defaultMargin),
-                      ),
                       Container(
                         margin: EdgeInsets.only(top: 10, bottom: 16),
                         child: generateDashedDivider(

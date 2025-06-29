@@ -1,82 +1,70 @@
 part of 'services.dart';
 
 class MovieServices {
-  String? gendreId = null;
-  static Future<List<Movie>> getMovies(gendreId) async {
-    String url =
-        "https://api.themoviedb.org/3/discover/movie?api_key=$api&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&with_genres=$gendreId";
+  static Future<List<Movie>> getMovies(String? genreId) async {
+    final url =
+        "${baseUrl}discover/movie?api_key=$apiKey&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false${genreId != null ? '&with_genres=$genreId' : ''}";
 
-    var response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url));
 
     if (response.statusCode != 200) {
+      print("Error loading movies: ${response.statusCode}");
       return [];
     }
 
-    var data = json.decode(response.body);
-    List result = data['results'];
+    final data = json.decode(response.body);
+    final List results = data['results'];
 
-    return result.map((e) => Movie.fromJson(e)).toList();
+    return results.map((e) => Movie.fromJson(e)).toList();
   }
 
   static Future<MovieDetail> getDetails(Movie? movie,
       {int? movieID, http.Client? client}) async {
-    // Jika movieID null, gunakan movie.id.
-    String url =
-        "https://api.themoviedb.org/3/movie/${movieID ?? movie?.id}?api_key=$api&language=en-US"; // Perhatikan penggunaan movie?.id yang aman jika movie null.
+    final id = movieID ?? movie?.id;
+    final url = "${baseUrl}movie/$id?api_key=$apiKey&language=en-US";
 
     client ??= http.Client();
 
-    var response = await client.get(Uri.parse(url));
-    var data = json.decode(response.body);
+    final response = await client.get(Uri.parse(url));
+    final data = json.decode(response.body);
 
-    List genres = (data as Map<String, dynamic>)['genres'];
-    String language = 'Unknown';
+    final genres = data['genres'];
+    String language = _mapLanguageCode(data['original_language']);
 
-    switch ((data as Map<String, dynamic>)['original_language'].toString()) {
-      case 'ja':
-        language = 'Japanese';
-        break;
-      case 'id':
-        language = 'Indonesian';
-        break;
-      case 'ko':
-        language = 'Korean';
-        break;
-      case 'en':
-        language = 'English';
-        break;
-    }
-
-    return movieID != null
-        ? MovieDetail(Movie.fromJson(data),
-            language: language,
-            genres: genres
-                .map((e) => (e as Map<String, dynamic>)['name'].toString())
-                .toList())
-        : MovieDetail(
-            movie ??
-                Movie.fromJson(
-                    data), // Jika movie null, buat movie baru dari data
-            language: language,
-            genres: genres
-                .map((e) => (e as Map<String, dynamic>)['name'].toString())
-                .toList());
+    return MovieDetail(
+      movieID != null ? Movie.fromJson(data) : (movie ?? Movie.fromJson(data)),
+      language: language,
+      genres: genres.map<String>((e) => e['name'].toString()).toList(),
+    );
   }
 
   static Future<List<Credit>> getCredits(int movieID) async {
-    String url =
-        "https://api.themoviedb.org/3/movie/$movieID/credits?api_key=$api";
+    final url = "${baseUrl}movie/$movieID/credits?api_key=$apiKey";
 
-    var client = http.Client();
+    final response = await http.get(Uri.parse(url));
+    final data = json.decode(response.body);
 
-    var response = await client.get(Uri.parse(url));
-    var data = json.decode(response.body);
-
-    return ((data as Map<String, dynamic>)['cast'] as List)
+    return (data['cast'] as List)
         .map((e) => Credit(
-            name: (e as Map<String, dynamic>)['name'],
-            profilePath: (e as Map<String, dynamic>)['profile_path']))
+              name: e['name'],
+              profilePath: e['profile_path'],
+            ))
         .take(8)
         .toList();
+  }
+
+  static String _mapLanguageCode(String code) {
+    switch (code) {
+      case 'ja':
+        return 'Japanese';
+      case 'id':
+        return 'Indonesian';
+      case 'ko':
+        return 'Korean';
+      case 'en':
+        return 'English';
+      default:
+        return 'Unknown';
+    }
   }
 }
