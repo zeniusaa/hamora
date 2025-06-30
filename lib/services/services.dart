@@ -15,3 +15,4 @@ part 'firebase_options.dart';
 part 'auth_services.dart';
 part 'user_services.dart';
 part 'movie_services.dart';
+part 'review_services.dart';

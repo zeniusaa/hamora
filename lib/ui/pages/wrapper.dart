@@ -34,7 +34,10 @@ class Wrapper extends StatelessWidget {
         } else if (pageState is OnAccountConfirmationPage) {
           return AccountConfirmationPage(pageState.registrationData);
         } else if (pageState is OnMovieDetailPage) {
-          return MovieDetailPage(pageState.movie);
+          return BlocProvider(
+            create: (_) => ReviewBloc()..add(LoadReviews()),
+            child: MovieDetailPage(pageState.movie),
+          );
         } else if (pageState is OnProfilePage) {
           return ProfilePage();
         } else if (pageState is OnEditProfilePage) {

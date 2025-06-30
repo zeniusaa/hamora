@@ -9,7 +9,7 @@ class MovieDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        context.read<PageBloc>().add(GoToMainPage());
+        BlocProvider.of<PageBloc>(context).add(GoToMainPage());
         return false;
       },
       child: Scaffold(
@@ -25,12 +25,12 @@ class MovieDetailPage extends StatelessWidget {
                   builder: (_, snapshot) {
                     if (snapshot.hasData) {
                       MovieDetail? movieDetail = snapshot.data;
-
                       return Column(
                         children: <Widget>[
                           _buildMovieInfo(movie, movieDetail!),
                           _buildCastAndCrewSection(movie.id),
                           _buildStorylineSection(movie),
+                          _buildReviewSection(context, movie),
                         ],
                       );
                     } else {
@@ -56,8 +56,7 @@ class MovieDetailPage extends StatelessWidget {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: NetworkImage(
-                  imagesBaseUrl + "w1280" + movie.backdropPath ??
-                      movie.posterPath),
+                imagesBaseUrl + "w1280" + (movie.backdropPath ?? movie.posterPath)),
               fit: BoxFit.cover,
             ),
           ),
@@ -77,7 +76,7 @@ class MovieDetailPage extends StatelessWidget {
           left: defaultMargin,
           child: GestureDetector(
             onTap: () {
-              context.read<PageBloc>().add(GoToMainPage());
+              BlocProvider.of<PageBloc>(context).add(GoToMainPage());
             },
             child: Container(
               padding: EdgeInsets.all(1),
@@ -112,24 +111,14 @@ class MovieDetailPage extends StatelessWidget {
           ),
         ),
         SizedBox(height: 6),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              movie.title,
-              style: whiteTextFont.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // RatingStars(
-            //   voteAverage: movie.voteAverage,
-            // ),
-            // SizedBox(height: 24),
-          ],
+        Text(
+          movie.title,
+          style: whiteTextFont.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -190,6 +179,108 @@ class MovieDetailPage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildReviewSection(BuildContext context, Movie movie) {
+    final _controller = TextEditingController();
+    double _currentRating = 3;
+    String reviewerName = "Anonymous";
+
+    final userState = context.read<UserBloc>().state;
+    if (userState is UserLoaded) {
+      reviewerName = userState.user.name ?? "Anonymous";
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(defaultMargin, 16, defaultMargin, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("User Reviews", style: blackTextFont.copyWith(fontSize: 16)),
+          BlocBuilder<ReviewBloc, ReviewState>(
+            builder: (context, state) {
+              if (state is ReviewLoading) {
+                return Center(child: CircularProgressIndicator());
+              } else if (state is ReviewLoaded) {
+                final movieReviews = state.reviews
+                    .where((r) => r.movieTitle == movie.title)
+                    .toList();
+
+                return Column(
+                  children: movieReviews.map((r) {
+                    return ListTile(
+                      title: Text(r.reviewer),
+                      subtitle: Text(r.review),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          r.rating.toInt(),
+                          (index) => Icon(Icons.star, color: Colors.amber, size: 16),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              } else {
+                return Text("Belum ada review.");
+              }
+            },
+          ),
+          SizedBox(height: 20),
+          Divider(),
+          Text("Your Review", style: blackTextFont.copyWith(fontSize: 14)),
+          SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: "Tell Everyone....",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text("Rating: ", style: blackTextFont),
+              SizedBox(width: 10),
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return Row(
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentRating = (index + 1).toDouble();
+                          });
+                        },
+                        child: Icon(
+                          Icons.star,
+                          color: index < _currentRating ? Colors.amber : Colors.grey[400],
+                        ),
+                      );
+                    }),
+                  );
+                },
+              ),
+            ],
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final review = Review(
+                id: '',
+                movieTitle: movie.title,
+                reviewer: reviewerName,
+                review: _controller.text,
+                rating: _currentRating,
+              );
+              BlocProvider.of<ReviewBloc>(context).add(AddReview(review));
+              _controller.clear();
+            },
+            child: Text("Review"),
+          ),
+        ],
+      ),
     );
   }
 }

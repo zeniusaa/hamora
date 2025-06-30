@@ -19,13 +19,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamProvider<auth.User?>.value(
       value: AuthServices.userStream,
-      initialData: null, // Tambahkan inisialisasi
+      initialData: null,
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => PageBloc()),
           BlocProvider(create: (_) => UserBloc()),
           BlocProvider(create: (_) => ThemeBloc()),
           BlocProvider(create: (_) => MovieBloc()..add(FetchMovies(''))),
+          BlocProvider(create: (_) => ReviewBloc()..add(LoadReviews())), // ✅ Tambahkan ini
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
